@@ -10,6 +10,6 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ExcelWordResponse implements Serializable {
+public class ExcelWordData implements Serializable {
     List<ExcelWord> excelWords;
 }

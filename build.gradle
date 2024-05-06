@@ -18,14 +18,15 @@ repositories {
 dependencies {
     implementation 'org.projectlombok:lombok:1.18.4'
     annotationProcessor 'org.projectlombok:lombok:1.18.4'
-    testImplementation platform('org.junit:junit-bom:5.9.1')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation 'org.springframework.boot:spring-boot-starter-web:2.7.9'
     implementation 'org.jsoup:jsoup:1.14.3'
-    implementation 'org.apache.poi:poi:4.1.2'
-    implementation 'org.apache.poi:poi-ooxml:4.1.2'
-    implementation 'org.apache.poi:poi-ooxml-schemas:4.1.2'
-
+    implementation 'com.baomidou:mybatis-plus-boot-starter:3.5.3.1'
+    implementation 'mysql:mysql-connector-java:8.0.33'
+    implementation 'com.alibaba.fastjson2:fastjson2:2.0.25'
+    testImplementation 'org.powermock:powermock-module-junit4:2.0.9'
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:2.7.9'
 }
 
 test {
