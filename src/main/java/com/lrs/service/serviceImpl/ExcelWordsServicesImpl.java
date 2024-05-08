@@ -63,8 +63,13 @@ public class ExcelWordsServicesImpl extends ServiceImpl<ExcelWordsMapper, ExcelW
     public JSONObject syncExcelToDB(List<ExcelWord> excelWords) {
         JSONObject jsonObject = new JSONObject();
 
+        for (ExcelWord excelWord : excelWords) {
+            if (Objects.equals(excelWord.getWord(), "") || excelWord.getWord() == null) {
+                return jsonObject;
+            }
+        }
         QueryWrapper<ExcelWord> wrapper = new QueryWrapper<>();
-        wrapper.eq("date", LocalDate.now());
+        wrapper.eq("date", excelWords.get(0).getDate());
         List<ExcelWord> excelWordList = excelWordsMapper.selectList(wrapper);
         // db数据
         System.out.println(excelWordList);
