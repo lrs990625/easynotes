@@ -2,9 +2,11 @@ package com.lrs.controller;
 
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lrs.domian.ExcelWord;
 import com.lrs.domian.ExcelWordData;
 import com.lrs.service.ExcelWordsServices;
@@ -12,8 +14,12 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,42 +29,61 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 
+
+@CrossOrigin
 @RestController
 public class QueryController {
+    private static final Logger log = LoggerFactory.getLogger(QueryController.class);
     @Autowired
     private ExcelWordsServices excelWordsServices;
 
-    @RequestMapping("/query/{keyWord}")
-    public void queryWord(@PathVariable String keyWord) {
-        // 调API返回页面到本地
-        String response = sendRequest(keyWord);
-        // 处理response
-        ExcelWordData excelWords = getExcelWord(response);
+    @RequestMapping(value = "/query/{keyWord}", method = RequestMethod.GET)
+    public ResponseEntity<ExcelWordData> queryWord(@PathVariable String keyWord) {
+        ExcelWordData excelWords = null;
         try {
-            excelWordsServices.saveExcelWordList(excelWords);
+            // 调API返回页面到本地
+            String response = sendRequest(keyWord);
+            // 处理response
+            excelWords = getExcelWord(response);
         } catch (Exception e) {
-            System.err.println(e.toString());
             throw new RuntimeException(e);
+        }
+        return new ResponseEntity<>(excelWords, HttpStatus.OK);
+//        try {
+//            excelWordsServices.saveExcelWordList(excelWords);
+//        } catch (Exception e) {
+//            System.err.println(e.toString());
+//            throw new RuntimeException(e);
+//        }
+    }
+
+    @RequestMapping(value = "/save", method = RequestMethod.POST)
+    public ResponseEntity<String> save(@RequestBody List<ExcelWord> data) {
+        try {
+            ExcelWordData excelWordData = new ExcelWordData();
+            excelWordData.setExcelWords(data);
+            excelWordsServices.saveExcelWordList(excelWordData);
+            return new ResponseEntity<>("保存成功", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @RequestMapping(value = "/syncExcelToDB", method = RequestMethod.POST)
     public String syncExcelToDB(@RequestBody String data) {
         try {
-            // 将接收到的 JSON 字符串解析为 Java 对象
-            List<ExcelWord> excelWords = JSON.parseArray(data, ExcelWord.class);
-
-            JSONObject jsonObject = excelWordsServices.syncExcelToDB(excelWords);
-
-            // 遍历所有的键，检查是否对应的值为空，如果为空则移除该键值对
-            for (Iterator<String> iterator = jsonObject.keySet().iterator(); iterator.hasNext(); ) {
-                String key = iterator.next();
-                if (jsonObject.getJSONArray(key).isEmpty()) {
-                    iterator.remove();
-                }
+            // 创建 ObjectMapper 对象
+            ObjectMapper objectMapper = new ObjectMapper();
+            // 解析 JSON 数组字符串并转换为 List<ExcelWord>
+            List<ExcelWord> excelWordList = objectMapper.readValue(data, new TypeReference<List<ExcelWord>>() {});
+            if (!Objects.isNull(excelWordList.get(0).getUser())) {
+                JSONObject jsonObject = excelWordsServices.syncExcelToDB(excelWordList);
+                // 遍历所有的键，检查是否对应的值为空，如果为空则移除该键值对
+                jsonObject.keySet().removeIf(key -> jsonObject.getJSONArray(key).isEmpty());
+                // 返回修改后的 JSONObject
+                return !jsonObject.isEmpty() ? jsonObject.toJSONString() : "无变动";
             }
-            // 返回修改后的 JSONObject
-            return jsonObject.size() > 0 ? jsonObject.toJSONString() : "无变动";
+            return "用户未指定";
         } catch (Exception e) {
             // 处理异常
             e.printStackTrace();

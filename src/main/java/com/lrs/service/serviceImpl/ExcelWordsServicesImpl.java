@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class ExcelWordsServicesImpl extends ServiceImpl<ExcelWordsMapper, ExcelW
     public void saveExcelWordList(ExcelWordData data) {
         List<ExcelWord> excelWords = data.getExcelWords();
         for (ExcelWord excelWord : excelWords) {
-            excelWord.setDate(LocalDate.now());
+            excelWord.setDate(LocalDateTime.now());
 
             // 先查
             QueryWrapper<ExcelWord> wrapper = new QueryWrapper<>();
@@ -68,8 +69,15 @@ public class ExcelWordsServicesImpl extends ServiceImpl<ExcelWordsMapper, ExcelW
                 return jsonObject;
             }
         }
+        // 获取第一个ExcelWord对象的日期
+        LocalDateTime dateToMatch = excelWords.get(0).getDate();
+
+        // 提取日期部分
+        LocalDate dateToMatchDatePart = dateToMatch.toLocalDate();
+        LocalDateTime startDate = dateToMatchDatePart.atStartOfDay();
+        LocalDateTime endDate = dateToMatchDatePart.plusDays(1).atStartOfDay();
         QueryWrapper<ExcelWord> wrapper = new QueryWrapper<>();
-        wrapper.eq("date", excelWords.get(0).getDate());
+        wrapper.between("date", startDate, endDate);
         List<ExcelWord> excelWordList = excelWordsMapper.selectList(wrapper);
         // db数据
         System.out.println(excelWordList);
@@ -99,7 +107,7 @@ public class ExcelWordsServicesImpl extends ServiceImpl<ExcelWordsMapper, ExcelW
                 idsToDelete.remove(excelWord.getId());
             } else {
                 // 如果id不存在于数据库中，插入新的单词
-                excelWord.setDate(LocalDate.now());
+                excelWord.setDate(LocalDateTime.now());
                 addExcelWords.add(excelWord);
             }
         }

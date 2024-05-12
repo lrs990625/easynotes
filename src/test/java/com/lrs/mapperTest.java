@@ -23,4 +23,7 @@ public class mapperTest {
         List<ExcelWord> excelWordList = excelWordsMapper.selectList(null);
         System.out.println(excelWordList);
     }
+
+
+
 }
